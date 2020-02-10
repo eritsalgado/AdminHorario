@@ -3,119 +3,215 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+
+use App\Http\Requests;
+
+use App\Helpers\JwtAuth;
+
+use App\user;
+
 use App\Horario;
 
 class HorarioController extends Controller
 {
-    public function index(){
-        $horario = Horario::all()
-                        ->load('usuario');
+    public function index(Request $request){
+       
+        /*
+        $hash = $request->header('Authorization', null);
+
+        $jwtAuth = new JwtAuth();
+        $checkToken = $jwtAuth->checkToken($hash);
+
+        if($checkToken){
+            echo "index de CarController AUTENTICADO"; die();
+        }else{
+            echo "NO AUTENTICADO -> Index de CarController"; die();
+        }
+        */
+
+        $horario = Horario::all()->load('user');
         return response()->json(array(
-            'registro' => $horario,
+            'horario' => $horario,
             'status' => 'success'
-        ),200);
+        ), 200);
+    }
+    public function show($id){
+        $horario = Horario::find($id)->load('user');
+        return response()->json(array('horario' => $horario, 'status' => 'success'), 200);
     }
     public function store(Request $request){
-        //Recibir datos POST
-        $json = $request->input('json', null);
-        $params =json_decode($json);
-        
-        //Se verifica datos y asignarlos
-        $usuario_id     = (!is_null($json) && isset($params->usuario_id))       ? $params->usuario_id       : null;
-        $hora_ingreso   = (!is_null($json) && isset($params->hora_ingreso))     ? $params->hora_ingreso     : null;
-        $hora_descanso  = (!is_null($json) && isset($params->hora_descanso))    ? $params->hora_descanso    : null;
-        $hora_regreso   = (!is_null($json) && isset($params->hora_regreso))     ? $params->hora_regreso     : null;
-        $hora_salida    = (!is_null($json) && isset($params->hora_salida))      ? $params->hora_salida      : null;
-        $fecha          = (!is_null($json) && isset($params->fecha))            ? $params->fecha            : null;
-        $notas          = (!is_null($json) && isset($params->notas))            ? $params->notas            : null;
+        $hash = $request->header('Authorization', null);
 
-        //Verificar integridad de datos
-        if( !is_null($usuario_id) && !is_null($hora_ingreso) && !is_null($fecha) ){
+        $jwtAuth = new JwtAuth();
+        $checkToken = $jwtAuth->checkToken($hash);
 
-            //Obtener IP actual
-            function getRealIP(){
-                if (isset($_SERVER["HTTP_CLIENT_IP"]))
-                {
-                    return $_SERVER["HTTP_CLIENT_IP"];
+        if($checkToken){
+            //recoger datos con post
+            $json = $request->input('json', null);
+            $params = json_decode($json);
+            $params_array = json_decode($json, true);
+
+            //conseguir el usuario identificado
+            $user = $jwtAuth->checkToken($hash, true);
+
+            if($user->role == "Administrador"){
+                //validacion
+                $validate = \Validator::make($params_array,[
+                    'user_id' => 'required',
+                    'hora_ingreso' => 'required'
+                ]);
+            
+                if($validate->fails()){
+                    return response()->json($validate->errors(), 400);
                 }
-                elseif (isset($_SERVER["HTTP_X_FORWARDED_FOR"]))
-                {
-                    return $_SERVER["HTTP_X_FORWARDED_FOR"];
-                }
-                elseif (isset($_SERVER["HTTP_X_FORWARDED"]))
-                {
-                    return $_SERVER["HTTP_X_FORWARDED"];
-                }
-                elseif (isset($_SERVER["HTTP_FORWARDED_FOR"]))
-                {
-                    return $_SERVER["HTTP_FORWARDED_FOR"];
-                }
-                elseif (isset($_SERVER["HTTP_FORWARDED"]))
-                {
-                    return $_SERVER["HTTP_FORWARDED"];
-                }
-                else
-                {
-                    return $_SERVER["REMOTE_ADDR"];
-                }
+            
 
-            }
-            $ip_usuario = getRealIP();
-            //Consultar geolocalización
-            $geo = unserialize(file_get_contents("http://www.geoplugin.net/php.gp?ip=$ip_usuario"));
-            $city = $geo["geoplugin_city"];
-            $region = $geo["geoplugin_regionName"];
-            $country = $geo["geoplugin_countryName"];
-            $latitude = $geo["geoplugin_latitude"];
-            $longitude = $geo["geoplugin_longitude"];
+                //guardar el coche
+            
+                $horario = new Horario();
+                $horario->user_id = $params->user_id;
+                $horario->hora_ingreso = $params->hora_ingreso;
+                
+                
 
-
-            $ubicacion = $country.", ".$city;
-
-            //Crear registro de horario del dia
-            $horario = new Horario();
-            $horario->usuario_id    = $usuario_id;
-            $horario->hora_ingreso  = $hora_ingreso;
-            $horario->hora_descanso = $hora_descanso;
-            $horario->hora_regreso = $hora_regreso;
-            $horario->hora_salida = $hora_salida;
-            $horario->fecha = $fecha;
-            $horario->notas = $notas;
-            $horario->ubicacion = $ubicacion;
-
-            //Comprobar que no se repita su registro
-            $existencia_horario = Horario::where('usuario_id', '=', $usuario_id)
-                                        ->where('fecha', '=', $fecha)
-                                        ->first();
-            if(count((array)$existencia_horario) == 0){
-                //Guardar el registro
                 $horario->save();
                 
                 $data = array(
-                    'data' => $horario,
+                    'horario' => $horario,
                     'status' => 'success',
-                    'code' => 201,
-                    'message' => 'Ingreso registrado correctamente'
+                    'code' => 200,
                 );
             }else{
-                //No guardar usuario por que ya existe
+                //devolver error
                 $data = array(
-                    'status' => 'error',
-                    'code' => 400,
-                    'message' => 'Registro duplicado, este usuario ya registró su ingreso anteriormente el día de hoy.'
-                );
-            }
-
-
-        }else{
-            $data = array(
+                'message' => 'No tienes los permisos para esta operacion',
                 'status' => 'error',
-                'code' => 400,
-                'message' => 'Horario no creado, faltan datos importantes'
+                'code' => 300,
             );
-        }
+            }
+        }else{
+            //devolver error
+            $data = array(
+                'message' => 'Login incorrecto',
+                'status' => 'error',
+                'code' => 300,
+            );
+        } 
 
         return response()->json($data, 200);
     }
+    public function update($id, Request $request){
+        $hash = $request->header('Authorization', null);
+
+        $jwtAuth = new JwtAuth();
+        $checkToken = $jwtAuth->checkToken($hash);
+
+        
+
+        if($checkToken){
+            //recoger parametros post
+            $json = $request->input('json', null);
+            $params = json_decode($json);
+            $params_array = json_decode($json, true);
+            /*La función array_except nos devuelve los valores del arreglo exceptuando 
+            el valor con la llave que le pasemos como parámetro */
+            //$new_params = array_except($params_array, ['role']);
+            //seguarda el rol enviado desde la pagina
+            //$role = (!is_null($json) && isset($params->role)) ? $params->role : null;
+
+             //conseguir el usuario identificado
+             $user = $jwtAuth->checkToken($hash, true);
+
+            if($user->role == "Administrador"){
+                //se crea la fecha actual
+                $fecha_actual = date('Y-m-d', time());
+                //actualizar el registro
+                $horario = Horario::where('user_id', $id));
+                //->update($params_array);
+
+                
+                
+                foreach($horario as $key => $hora){
+                    
+                    //se divide la fecha actual
+                    list($year_actual, $mes_actual, $dias)=explode($fecha_actual);
+                    //se divide la fecha de la bd
+                    list($year_bd, $mes_bd, $dia)=explode($hora['created_at']);
+                    
+                    if($year_actual == $year_bd && $mes_actual == $mes_bd && $dias == $dia){
+                    
+                        if()
+                            //validar los datos
+                            $validate = \Validator::make($params_array,[
+                                'user_id' => 'required',
+                                'hora_inicio_comida' => 'required'
+                            ]);
+                            
+                        
+                            if($validate->fails()){
+                                return response()->json($validate->errors(), 400);
+                            }
+                    }
+                }
+
+
+                $data = array(
+                    'horario' => $params,
+                    'status' => 'success',
+                    'code' => 200
+                );
+
+            }else{
+                 //devolver error
+                $data = array(
+                'message' => 'no cuentas con los permisos para esto',
+                'status' => 'error',
+                'code' => 300,
+                );
+            }
+
+        }else{
+            //devolver error
+            $data = array(
+                'message' => 'no se pudo actualizar',
+                'status' => 'error',
+                'code' => 300,
+            );
+        } 
+
+        return response()->json($data, 200);
+    }
+    public function destroy($id, Request $request){
+        $hash = $request->header('Authorization', null);
+
+        $jwtAuth = new JwtAuth();
+        $checkToken = $jwtAuth->checkToken($hash);
+
+        if($checkToken){
+            //Comprobar que existe el registro
+            $horario = Horario::find($id);
+
+            //Borrarlo
+            $horario->delete();
+
+            //devolverlo
+            $data = array(
+                'car' => $horario,
+                'status' => 'success',
+                'code' => 200
+            );
+        }else{
+            //devolver error
+            $data = array(
+                'message' => 'login incorrecto',
+                'status' => 'error',
+                'code' => 400,
+            );
+        } 
+
+        return response()->json($data, 200);
+    }
+
+
+    
 }
