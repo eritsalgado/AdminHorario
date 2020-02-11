@@ -18,4 +18,5 @@ Route::get('/', function () {
 
 Route::post('/register', 'UserController@register');
 Route::post('/login', 'UserController@login');
+Route::get('/users', 'UserController@index');
 Route::resource('/horario', 'HorarioController');

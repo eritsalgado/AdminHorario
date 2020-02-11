@@ -14,6 +14,13 @@ use App\user;
 
 class UserController extends Controller
 {
+    public function index(Request $request){
+        $user = User::all();
+        return response()->json(array(
+            'user' => $user,
+            'status' => 'success'
+        ), 200);
+    }
     public function register(Request $request){
         //recoger post
         $json = $request->input('json', null);
