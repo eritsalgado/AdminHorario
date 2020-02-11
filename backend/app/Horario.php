@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Horario extends Model
 {
     protected $table = 'horarios';
-    
-    //relacion
-    public function user(){
-        return $this->belongsTo('App\User','user_id');
+
+    //Relación
+    public function usuario(){
+        //Vamos a devolver todos los datos del usuario que ha creado el registro
+        return $this->belongsTo('App\Usuario', 'usuario_id');
     }
 }

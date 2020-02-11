@@ -1,43 +1,44 @@
 <?php
+
 namespace App\Helpers;
 
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\DB;
-use App\User;
+use App\Usuario;
+
 class JwtAuth{
     public $key;
 
     public function __construct(){
-        $this->key = 'esta-es-mi-clave-secreta-123456';
+        $this->key = 'ExecuteOrder66';
     }
 
-    public function signup($email, $password, $getToken = null){
+    public function signup($no_empleado, $password, $getToken=null){
+        //Comprobar si existe el usuario en la BD
 
-        $user = User::where(
-                array(
-                        'email' => $email,
-                        'password' => $password
-                ))->first();
+        $user = Usuario::where('no_empleado', '=', $no_empleado)->first();
+
         $signup = false;
+
         if(is_object($user)){
-            $signup = true;
-        }else{
-            $signup = false;
+            if (password_verify($password, $user->password))
+                {$signup = true;}
+            else
+                {$signup = false;}
         }
-        
+
         if($signup){
-            //Genera el token y devolverlo
+            //Generar un token
             $token = array(
-                'sub' => $user->id,
-                'email' => $user->email,
-                'name' => $user->name,
-                'surname' => $user->surname,
-                'role' => $user->role,
-                'no_empleado' => $user->no_empleado,
-                'check_in' => $user->check_in,
-                'iat' => time(),
-                'exp' => time() + (7 * 24 * 60 *60)
+                'id'         => $user->id,
+                'no_empleado'=> $user->no_empleado,
+                'rol'        => $user->rol,
+                'nombre'     => $user->nombre,
+                'apellido'   => $user->apellido,
+                'iat'        => time(),
+                'exp'        => time() + (7 * 24 * 60 * 60)
             );
+
             $jwt = JWT::encode($token, $this->key, 'HS256');
             $decoded = JWT::decode($jwt, $this->key, array('HS256'));
 
@@ -46,11 +47,16 @@ class JwtAuth{
             }else{
                 return $decoded;
             }
+
         }else{
-            //devolver un error
-            return array('status' => 'error', 'message' => 'login ha fallado !!');
+            //Devolver un error
+            return array(
+                'status' => 'error',
+                'messaeg' => 'El login ha fallado.'
+            );
         }
     }
+
 
     public function checkToken($jwt, $getIdentity = false){
         $auth = false;
@@ -63,16 +69,15 @@ class JwtAuth{
             $auth = false;
         }
 
-        if(isset($decoded) && is_object($decoded) && isset($decoded->sub)){
+        if(isset($decoded) && is_object($decoded) && isset($decoded->id)){
             $auth = true;
         }else{
             $auth = false;
         }
-        
+
         if($getIdentity){
             return $decoded;
         }
-    
 
         return $auth;
     }
