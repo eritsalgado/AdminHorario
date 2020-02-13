@@ -16,7 +16,7 @@ const Home = () => {
 
   useEffect(()=>{
     const obtenerUsuarios = async ()=> {
-      const url = `http://marssa.com.devel/api/usuarios`;
+      const url = `http://tu-link.com.devel/api/usuarios`;
       const usuarios = await axios.get(url);
       let datausuarios = usuarios.data.empleados;
       guardarUsuario(datausuarios)
