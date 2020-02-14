@@ -24,6 +24,7 @@ class UsuarioController extends Controller
 
         //Se verifica los datos que debería traer la variable
         $no_empleado    = (!is_null($json) && isset($params->no_empleado))  ? $params->no_empleado  : null;
+        $no_nomina      = (!is_null($json) && isset($params->no_nomina))  ? $params->no_nomina  : null;
         $rol            = (!is_null($json) && isset($params->rol))          ? $params->rol          : null;
         $nombre         = (!is_null($json) && isset($params->nombre))       ? $params->nombre       : null;
         $apellido       = (!is_null($json) && isset($params->apellido))     ? $params->apellido     : null;

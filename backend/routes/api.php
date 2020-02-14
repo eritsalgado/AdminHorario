@@ -21,6 +21,8 @@ use Illuminate\Http\Request;
 Route::get('/usuarios','UsuarioController@index');
 Route::post('/register','UsuarioController@register');
 Route::post('/login','UsuarioController@login');
+Route::post('/semana','HorarioController@semana');
+Route::post('/general','HorarioController@general');   
 Route::resource('horario','HorarioController');
 Route::resource('equipo','EquipoController');
 Route::resource('obra','ObraController');

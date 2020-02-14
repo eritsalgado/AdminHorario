@@ -4,9 +4,9 @@ USE admin_empresa;
 CREATE TABLE usuarios(
     id          int(255) auto_increment not null,
     no_empleado int(255),
+    no_nomina   int(255),
     rol         varchar(255),  
     nombre      varchar(255),
-    apellido    varchar(255),
     salario     float(8,2),
     ingreso     date,
     password    varchar(255),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Horario;
+use App\Usuario;
 
 class HorarioController extends Controller
 {
@@ -17,6 +18,7 @@ class HorarioController extends Controller
         ),200);
     }
     public function store(Request $request){
+        
         //Recibir datos POST
         $json = $request->input('json', null);
         $params =json_decode($json);
@@ -24,9 +26,6 @@ class HorarioController extends Controller
         //Se verifica datos y asignarlos
         $usuario_id     = (!is_null($json) && isset($params->usuario_id))       ? $params->usuario_id       : null;
         $hora_ingreso   = (!is_null($json) && isset($params->hora_ingreso))     ? $params->hora_ingreso     : null;
-        $hora_descanso  = (!is_null($json) && isset($params->hora_descanso))    ? $params->hora_descanso    : null;
-        $hora_regreso   = (!is_null($json) && isset($params->hora_regreso))     ? $params->hora_regreso     : null;
-        $hora_salida    = (!is_null($json) && isset($params->hora_salida))      ? $params->hora_salida      : null;
         $fecha          = (!is_null($json) && isset($params->fecha))            ? $params->fecha            : null;
         $notas          = (!is_null($json) && isset($params->notas))            ? $params->notas            : null;
 
@@ -77,9 +76,6 @@ class HorarioController extends Controller
             $horario = new Horario();
             $horario->usuario_id    = $usuario_id;
             $horario->hora_ingreso  = $hora_ingreso;
-            $horario->hora_descanso = $hora_descanso;
-            $horario->hora_regreso = $hora_regreso;
-            $horario->hora_salida = $hora_salida;
             $horario->fecha = $fecha;
             $horario->notas = $notas;
             $horario->ubicacion = $ubicacion;
@@ -116,6 +112,86 @@ class HorarioController extends Controller
             );
         }
 
+        return response()->json($data, 200);
+    }
+    public function update($id, Request $request){
+        //Recibir datos POST
+        $json = $request->input('json', null);
+        $params =json_decode($json);
+        $params_array = json_decode($json, true);
+
+        $cambio = Horario::where('id', '=', $id )->update($params_array);
+
+        $data = array(
+            'hora' => $params,
+            'code' => 400,
+            'message' => 'quedo'
+        );
+        return response()->json($data, 200);
+    }
+    public function semana(Request $request){
+       
+        //Recibir datos POST
+        $json = $request->input('json', null);
+        $params =json_decode($json);
+        
+        //Se verifica datos y asignarlos
+        $usuario_id     = (!is_null($json) && isset($params->usuario_id))       ? $params->usuario_id       : null;
+        $fecha_inicio   = (!is_null($json) && isset($params->fecha_inicio))     ? $params->fecha_inicio     : null;
+        $fecha_fin      = (!is_null($json) && isset($params->fecha_fin))    ? $params->fecha_fin            : null;
+       
+
+        //Verificar integridad de datos
+        if( !is_null($usuario_id) && !is_null($fecha_inicio) && !is_null($fecha_fin) ){
+            $reporte = Horario::where('usuario_id', '=', $usuario_id    )
+                                ->where('fecha', '>=', $fecha_inicio   )
+                                ->where('fecha', '<=', $fecha_fin  )
+                                ->get();
+            $usuario = Usuario::where('id', '=', $usuario_id)->first();
+            $data = array(
+                'usuario'  => $usuario,
+                'reporte' => $reporte,
+                'message' => 'ya quedo'
+            );
+        }else{
+            $data = array(
+                'status' => 'error',
+                'code' => 400,
+                'message' => 'Manda las fechas para el reporte'
+            );
+        }
+                        
+        return response()->json($data, 200);
+        
+    }
+    public function general(Request $request){
+        //Recibir datos POST
+        $json = $request->input('json', null);
+        $params =json_decode($json);
+        
+        //Se verifica datos y asignarlos
+        $fecha_inicio   = (!is_null($json) && isset($params->fecha_inicio))     ? $params->fecha_inicio     : null;
+        $fecha_fin      = (!is_null($json) && isset($params->fecha_fin))    ? $params->fecha_fin            : null;
+       
+
+        //Verificar integridad de datos
+        if(!is_null($fecha_inicio) && !is_null($fecha_fin) ){
+            $reporte = Horario::where('fecha', '>=', $fecha_inicio   )
+                                ->where('fecha', '<=', $fecha_fin  )
+                                ->get();
+
+            $data = array(
+                'reporte' => $reporte,
+                'message' => 'ya quedo'
+            );
+        }else{
+            $data = array(
+                'status' => 'error',
+                'code' => 400,
+                'message' => 'Manda las fechas para el reporte'
+            );
+        }
+                        
         return response()->json($data, 200);
     }
 }
