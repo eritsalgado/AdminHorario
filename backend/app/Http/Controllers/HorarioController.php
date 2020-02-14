@@ -17,6 +17,25 @@ class HorarioController extends Controller
             'status' => 'success'
         ),200);
     }
+    public function hoy(Request $request){
+        //Recibir datos POST
+        $json = $request->input('json', null);
+        $params =json_decode($json);
+        
+        $fecha  = (!is_null($json) && isset($params->fecha))     ? $params->fecha    : null;
+        
+        if(is_null($fecha)){
+            $fecha = date("Y-m-d");
+        }
+        $reporte = Horario::where('fecha', '=', $fecha)->get();
+
+        $data = array(
+        'reporte' => $reporte,
+        'message' => 'ya quedo'
+        );
+
+        return response()->json($data, 200);
+    }
     public function store(Request $request){
         
         //Recibir datos POST
