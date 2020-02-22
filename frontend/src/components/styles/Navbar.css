@@ -6,9 +6,13 @@
 
 .Navbar__brand {
   color: #ffffff;
-
-  display: flex;
-  align-items: center;
+  display: inline;
+}
+.izquierda{
+  left: 10px;
+}
+.derecha{
+  right: 10px;
 }
 
 .Navbar__brand:hover {

@@ -7,11 +7,16 @@ import './styles/Navbar.css';
 class Navbar extends React.Component {
   render() {
     return (
-      <div className="Navbar">
+      <div className="Navbar navbar justify-content-between">
         <div className="container-fluid">
           <Link className="Navbar__brand" to="/">
             {/* <img className="Navbar__brand-logo" src={logo} alt="Logo" /> */}
             <span className="font-weight-light">Sistema de control de Horario</span>
+            <span className="font-weight-bold"></span>
+          </Link>
+          <Link className="Navbar__brand" to="/login">
+            {/* <img className="Navbar__brand-logo" src={logo} alt="Logo" /> */}
+            <span className="font-weight-light">Iniciar Sesión</span>
             <span className="font-weight-bold"></span>
           </Link>
         </div>

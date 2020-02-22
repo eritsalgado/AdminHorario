@@ -1,44 +1,66 @@
 import React, {Fragment, useState} from 'react';
+import axios from 'axios';
+import setAuthToken from '../utils/setAuthToken'
+import jwt from 'jsonwebtoken'
 
 const LoginForm = () => {
     
     //Crear state de Login
-    const [json, crearJson] = useState({
-        json: ''
-    })
     
     const [login, actualizarLogin] = useState({
         no_empleado: '',
         password: ''
     })
     const [ error, actualizarError ] = useState(false)
+    const [ detallesError, actualizarDetallesError ] = useState({mensaje:''})
     
     const actualizarState = e => {
         actualizarLogin({
             ...login,
             [e.target.name]: e.target.value
         })
-        crearJson({
-            ...json,
-            json: {
-                ...login,
-                [e.target.name]: e.target.value
-            }
-        })
         
     }
 
-    const submitLogin = e =>{
+    const submitLogin = async  e =>{
         e.preventDefault()
 
         if(no_empleado.trim() === '' || password.trim() === '' ){
             actualizarError(true)
+            actualizarDetallesError({
+                mensaje:'Todos los campos son obligatorios'
+            })
             return
         }
         actualizarError(false)
+        actualizarDetallesError({
+            mensaje:''
+        })
+
         actualizarLogin(login)  
         
-        console.log(json);
+        const {data} = await axios.post('http://marssa.com.devel/api/login', {
+            json: JSON.stringify(login)
+          })
+
+        if(typeof(data) === 'string'){
+            let token = data
+            console.log(jwt.decode(token))
+            localStorage.setItem("userToken", token);
+
+            actualizarError(false)
+            actualizarDetallesError({
+                mensaje:''
+            })
+            setAuthToken(token)
+
+
+        }else{
+            actualizarError(true)
+            actualizarDetallesError({
+                mensaje:'El usuario o contraseña no son correctos'
+            })
+        }
         
     }
 
@@ -47,7 +69,7 @@ const LoginForm = () => {
     return (
         <Fragment>
             
-            {error ? <p className="alert alert-danger">Todos los campos son obligatorios</p> : null}
+            {error ? <p className="alert alert-danger">{detallesError.mensaje}</p> : null}
             <form
                 onSubmit={submitLogin}
             >
@@ -63,6 +85,7 @@ const LoginForm = () => {
                     className="form-control col-md-12"
                     onChange={actualizarState}
                     value={no_empleado}
+                    autoFocus
                 />
 
                 <label 
